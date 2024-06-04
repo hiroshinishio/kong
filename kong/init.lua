@@ -869,7 +869,6 @@ function Kong.init_worker()
                             err)
     return
   end
-  kong.core_cache = core_cache
 
   kong.db:set_events_handler(worker_events)
 
@@ -913,6 +912,8 @@ function Kong.init_worker()
       end
 
     elseif declarative_entities then
+      kong.core_cache = core_cache
+
       ok, err = load_declarative_config(kong.configuration,
                                         declarative_entities,
                                         declarative_meta,
@@ -937,6 +938,8 @@ function Kong.init_worker()
       end
     end
   end
+
+  kong.core_cache = core_cache
 
   local is_not_control_plane = not is_control_plane(kong.configuration)
   if is_not_control_plane then
