@@ -1,5 +1,5 @@
 local _M = {}
-local _MT = { __index = _M }
+local _MT = { __index = _M, }
 
 
 local cjson = require("cjson.safe")
@@ -35,30 +35,39 @@ local NEW_VERSION_QUERY = [[
 --   { type = "route", "id" = "0a5bac5c-b795-4981-95d2-919ba3390b7e", "ws_id" = "73478cf6-964f-412d-b1c4-8ac88d9e85e9", row = "JSON", }
 -- }
 function _M:insert_delta(deltas)
+  local connector = self.connector
+
   local delta_str = {}
   for i, d in ipairs(deltas) do
     delta_str[i] = string_format("(new_version, %s, %s, %s, %s)",
-                                 self.connector:escape_literal(d.type),
-                                 self.connector:escape_literal(d.id),
-                                 self.connector:escape_literal(d.ws_id),
-                                 self.connector:escape_literal(cjson_encode(d.row)))
+                                 connector:escape_literal(d.type),
+                                 connector:escape_literal(d.id),
+                                 connector:escape_literal(d.ws_id),
+                                 connector:escape_literal(cjson_encode(d.row)))
   end
 
   local sql = string_format(NEW_VERSION_QUERY, table_concat(delta_str))
 
-  return self.connector:query(sql)
+  return connector:query(sql)
 end
 
 
 function _M:get_latest_version()
+  local connector = self.connector
+
   local sql = "SELECT currval(pg_get_serial_sequence('clustering_sync_version', 'version'))"
-  return self.connector:query(sql)[1].currval
+
+  return connector:query(sql)[1].currval
 end
 
 
 function _M:get_delta(version)
-  local sql = "SELECT * FROM clustering_sync_delta WHERE version > " .. self.connector:escape_literal(version) .. " ORDER BY version ASC"
-  return self.connector:query(sql)
+  local connector = self.connector
+
+  local sql = "SELECT * FROM clustering_sync_delta WHERE version > " ..
+              connector:escape_literal(version) ..
+              " ORDER BY version ASC"
+  return connector:query(sql)
 end
 
 
