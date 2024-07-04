@@ -2,7 +2,7 @@ local _M = {}
 local _MT = { __index = _M, }
 
 
-local semaphore = require("ngx.semaphore")
+--local semaphore = require("ngx.semaphore")
 local lmdb = require("resty.lmdb")
 local declarative = require("kong.db.declarative")
 local constants = require("kong.constants")

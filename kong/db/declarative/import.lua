@@ -6,7 +6,7 @@ local cycle_aware_deep_copy = require("kong.tools.table").cycle_aware_deep_copy
 local declarative_config = require("kong.db.schema.others.declarative_config")
 
 
-local yield = require("kong.tools.yield").yield
+--local yield = require("kong.tools.yield").yield
 local marshall = require("kong.db.declarative.marshaller").marshall
 local schema_topological_sort = require("kong.db.schema.topological_sort")
 local nkeys = require("table.nkeys")
@@ -14,14 +14,14 @@ local sha256_hex = require("kong.tools.sha256").sha256_hex
 local pk_string = declarative_config.pk_string
 
 local assert = assert
-local sort = table.sort
+--local sort = table.sort
 local type = type
 local pairs = pairs
-local next = next
+--local next = next
 local insert = table.insert
 local string_format = string.format
 local null = ngx.null
-local get_phase = ngx.get_phase
+--local get_phase = ngx.get_phase
 
 
 local DECLARATIVE_HASH_KEY = constants.DECLARATIVE_HASH_KEY
@@ -260,7 +260,7 @@ local function load_into_cache(entities, meta, hash)
 
       item = remove_nulls(item)
 
-      if transform then
+      if should_transform then
         local err
         item, err = schema:transform(item)
         if not item then

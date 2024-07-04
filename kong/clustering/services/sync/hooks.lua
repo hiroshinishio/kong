@@ -3,13 +3,13 @@ local _MT = { __index = _M, }
 
 
 local hooks = require("kong.hooks")
-local constants = require("kong.constants")
+--local constants = require("kong.constants")
 
 
 local ipairs = ipairs
 
 
-local CLUSTERING_PING_INTERVAL = constants.CLUSTERING_PING_INTERVAL
+--local CLUSTERING_PING_INTERVAL = constants.CLUSTERING_PING_INTERVAL
 
 
 function _M.new(strategy)

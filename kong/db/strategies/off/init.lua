@@ -4,21 +4,21 @@ local lmdb = require("resty.lmdb")
 local lmdb_prefix = require("resty.lmdb.prefix")
 local lmdb_transaction = require("resty.lmdb.transaction")
 local marshaller = require("kong.db.declarative.marshaller")
-local yield = require("kong.tools.yield").yield
+--local yield = require("kong.tools.yield").yield
 local declarative = require("kong.db.declarative")
 
 local kong = kong
 local string_format = string.format
 local type = type
 local next = next
-local sort = table.sort
+--local sort = table.sort
 local pairs = pairs
-local match = string.match
+--local match = string.match
 local assert = assert
-local tostring = tostring
-local tonumber = tonumber
-local encode_base64 = ngx.encode_base64
-local decode_base64 = ngx.decode_base64
+--local tostring = tostring
+--local tonumber = tonumber
+--local encode_base64 = ngx.encode_base64
+--local decode_base64 = ngx.decode_base64
 local null = ngx.null
 local unmarshall = marshaller.unmarshall
 local marshall = marshaller.marshall
@@ -125,7 +125,7 @@ local function page_for_prefix(self, prefix, size, offset, options, follow)
 
   offset = offset or prefix
 
-  local list = {}
+  --local list = {}
 
   local ret = {}
   local ret_idx = 0
@@ -258,7 +258,7 @@ local function delete(self, pk, options)
         end
 
         if fdata.unique_across_ws then
-          ws_id = default_workspace_id
+          ws_id = kong.default_workspace
         end
 
         local key = unique_field_key(entity_name, ws_id, fname, value)
@@ -337,7 +337,7 @@ local function insert(self, item, options)
         end
 
         if fdata.unique_across_ws then
-          ws_id = default_workspace_id
+          ws_id = kong.default_workspace
         end
 
         local key = unique_field_key(entity_name, ws_id, fname, value)
