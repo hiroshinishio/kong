@@ -23,7 +23,6 @@ end
 
 local function get_all_nodes_with_sync_cap()
   local ret = {}
-  local ret_n = 0
 
   local res, err = kong.db.clustering_data_planes:page(512)
   if err then
@@ -31,8 +30,10 @@ local function get_all_nodes_with_sync_cap()
   end
 
   if not res then
-    return {}
+    return ret
   end
+
+  local ret_n = 0
 
   for _, row in ipairs(res) do
     for _, c in ipairs(row.rpc_capabilities) do
@@ -44,6 +45,30 @@ local function get_all_nodes_with_sync_cap()
   end
 
   return ret
+end
+
+
+local function insert_delta_to_db(self, deltas)
+  local res, err = self.strategy:insert_delta(deltas)
+  if not res then
+    return nil, err
+  end
+
+  local latest_version = self.strategy:get_latest_version()
+
+  for _, node in ipairs(get_all_nodes_with_sync_cap()) do
+    res, err = kong.rpc:call(node, "kong.sync.v2.notify_new_version", latest_version)
+    if not res then
+      if not err:find("requested capability does not exist", nil, true) then
+        ngx.log(ngx.ERR, "unable to notify new version: ", err)
+      end
+
+    else
+      ngx.log(ngx.ERR, "notified ", node, " ", latest_version)
+    end
+  end
+
+  return true
 end
 
 
@@ -61,23 +86,9 @@ function _M:register_dao_hooks(is_cp)
         row = row, },
     }
 
-    local res, err = self.strategy:insert_delta(deltas)
-    if not res then
+    local ok, err = insert_delta_to_db(self, deltas)
+    if not ok then
       return nil, err
-    end
-
-    local latest_version = self.strategy:get_latest_version()
-
-    for _, node in ipairs(get_all_nodes_with_sync_cap()) do
-      res, err = kong.rpc:call(node, "kong.sync.v2.notify_new_version", latest_version)
-      if not res then
-        if not err:find("requested capability does not exist", nil, true) then
-          ngx.log(ngx.ERR, "unable to notify new version: ", err)
-        end
-
-      else
-        ngx.log(ngx.ERR, "notified ", node, " ", latest_version)
-      end
     end
 
     return row, name, options, ws_id
@@ -92,23 +103,9 @@ function _M:register_dao_hooks(is_cp)
         row = ngx.null, },
     }
 
-    local res, err = self.strategy:insert_delta(deltas)
-    if not res then
+    local ok, err = insert_delta_to_db(self, deltas)
+    if not ok then
       return nil, err
-    end
-
-    local latest_version = self.strategy:get_latest_version()
-
-    for _, node in ipairs(get_all_nodes_with_sync_cap()) do
-      res, err = kong.rpc:call(node, "kong.sync.v2.notify_new_version", latest_version)
-      if not res then
-        if not err:find("requested capability does not exist", nil, true) then
-          ngx.log(ngx.ERR, "unable to notify new version: ", err)
-        end
-
-      else
-        ngx.log(ngx.ERR, "notified ", node, " ", latest_version)
-      end
     end
 
     return row, name, options, ws_id, cascade_entries
