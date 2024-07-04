@@ -80,7 +80,7 @@ function _M:register_dao_hooks(is_cp)
   hooks.register_hook("dao:insert:post", function(row, name, options, ws_id)
     local deltas = {
       {
-        ["type"] = name,
+        type = name,
         id = row.id,
         ws_id = ws_id,
         row = row, },
@@ -97,7 +97,7 @@ function _M:register_dao_hooks(is_cp)
   hooks.register_hook("dao:delete:post", function(row, name, options, ws_id, cascade_entries)
     local deltas = {
       {
-        ["type"] = name,
+        type = name,
         id = row.id,
         ws_id = ws_id,
         row = ngx.null, },

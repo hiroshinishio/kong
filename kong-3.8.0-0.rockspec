@@ -98,7 +98,7 @@ build = {
 
     ["kong.clustering.services.debug"] = "kong/clustering/services/debug.lua",
     ["kong.clustering.services.sync"] = "kong/clustering/services/sync/init.lua",
-    ["kong.clustering.services.sync.rpc"] = "kong/clustering/services/sync/rpc.lua",
+    ["kong.clustering.services.sync.methods"] = "kong/clustering/services/sync/methods.lua",
     ["kong.clustering.services.sync.hooks"] = "kong/clustering/services/sync/hooks.lua",
     ["kong.clustering.services.sync.strategies.postgres"] = "kong/clustering/services/sync/strategies/postgres.lua",
 
