@@ -139,6 +139,7 @@ end
 --- Restore all nulls for declarative config.
 -- Declarative config is a huge table. Use iteration
 -- instead of recursion to improve performance.
+--[[
 local function restore_nulls(original_tbl, transformed_tbl)
   local o_stk = { original_tbl }
   local o_n = #o_stk
@@ -176,6 +177,7 @@ local function restore_nulls(original_tbl, transformed_tbl)
 
   return transformed_tbl
 end
+--]]
 
 
 local function get_current_hash()
