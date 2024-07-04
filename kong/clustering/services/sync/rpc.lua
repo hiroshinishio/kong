@@ -9,10 +9,17 @@ local constants = require("kong.constants")
 local concurrency = require("kong.concurrency")
 
 
-local DECLARATIVE_HASH_KEY = constants.DECLARATIVE_HASH_KEY
-local SYNC_MUTEX_OPTS = { name = "get_delta", timeout = 0, }
+local assert = assert
+local tonumber = tonumber
+local ipairs = ipairs
+local string_format = string.format
 local ngx_log = ngx.log
 local ngx_ERR = ngx.ERR
+local ngx_null = ngx.null
+
+
+local DECLARATIVE_HASH_KEY = constants.DECLARATIVE_HASH_KEY
+local SYNC_MUTEX_OPTS = { name = "get_delta", timeout = 0, }
 
 
 function _M.new(strategy)
@@ -36,13 +43,13 @@ function _M:init(manager, is_cp)
         last_seen = ngx.time(),
         hostname = node_id,
         ip = "127.0.0.1",
-        version = "3.6.0.0",
+        version = "3.7.0.0",  -- TODO
         sync_status = "normal",
-        config_hash = string.format("%032d", version),
-      rpc_capabilities = rpc_peers and rpc_peers[node_id] or {},
+        config_hash = string_format("%032d", version),
+        rpc_capabilities = rpc_peers and rpc_peers[node_id] or {},
       })
       if not ok then
-        ngx.log(ngx.ERR, "unable to update clustering data plane status: ", err)
+        ngx_log(ngx_ERR, "unable to update clustering data plane status: ", err)
       end
 
       return self.strategy:get_delta(version)
@@ -73,14 +80,14 @@ function _M:sync_once(delay)
         local delta, err = kong.rpc:call("control_plane", "kong.sync.v2.get_delta",
                              tonumber(declarative.get_current_hash()) or 0)
         if not delta then
-          ngx.log(ngx.ERR, "sync get_delta error: ", err)
+          ngx_log(ngx_ERR, "sync get_delta error: ", err)
           return true
         end
 
         local version = 0
 
         for _, d in ipairs(delta) do
-          if d.row ~= ngx.null then
+          if d.row ~= ngx_null then
             assert(kong.db[d.type]:delete({
               id = d.id,
             }))
@@ -94,7 +101,7 @@ function _M:sync_once(delay)
 
           if d.version ~= version then
             version = d.version
-            assert(lmdb.set(DECLARATIVE_HASH_KEY, string.format("%032d", version)))
+            assert(lmdb.set(DECLARATIVE_HASH_KEY, string_format("%032d", version)))
           end
         end
 
