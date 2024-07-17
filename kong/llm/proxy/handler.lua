@@ -109,6 +109,11 @@ local _KEYBASTION = setmetatable({}, {
 })
 
 
+local function accept_gzip()
+  return (kong.request.get_header("Accept-Encoding") or ""):match("%f[%a]gzip%f[%A]")
+end
+
+
 -- get the token text from an event frame
 local function get_token_text(event_t)
   -- get: event_t.choices[1]
@@ -124,7 +129,6 @@ end
 local function handle_streaming_frame(conf, chunk, finished)
   -- make a re-usable framebuffer
   local framebuffer = buffer.new()
-  local is_gzip = kong.response.get_header("Content-Encoding") == "gzip"
 
   local ai_driver = require("kong.llm.drivers." .. conf.model.provider)
 
@@ -140,8 +144,8 @@ local function handle_streaming_frame(conf, chunk, finished)
     -- transform each one into flat format, skipping transformer errors
     -- because we have already 200 OK'd the client by now
 
-    if (not finished) and (is_gzip) then
-      chunk = kong_utils.inflate_gzip(ngx.arg[1])
+    if not finished and kong.response.get_header("Content-Encoding") == "gzip" then
+      chunk = kong_utils.inflate_gzip(chunk)
     end
 
     local events = ai_shared.frame_to_events(chunk, conf.model.provider)
@@ -152,7 +156,7 @@ local function handle_streaming_frame(conf, chunk, finished)
       -- and then send the client a readable error in a single chunk
       local response = ERROR__NOT_SET
 
-      if is_gzip then
+      if accept_gzip() then
         response = kong_utils.deflate_gzip(response)
       end
 
@@ -234,7 +238,7 @@ local function handle_streaming_frame(conf, chunk, finished)
   end
 
   local response_frame = framebuffer:get()
-  if (not finished) and (is_gzip) then
+  if not finished and accept_gzip() then
     response_frame = kong_utils.deflate_gzip(response_frame)
   end
 
@@ -282,6 +286,13 @@ function _M:header_filter(conf)
   end
 
   local ai_driver = require("kong.llm.drivers." .. conf.model.provider)
+
+  if accept_gzip() then
+    kong.response.set_header("Content-Encoding", "gzip")
+  else
+    kong.response.clear_header("Content-Encoding")
+  end
+
   ai_driver.post_request(conf)
 end
 
@@ -328,8 +339,7 @@ local function body_filter_end(conf)
   if not response_body then
     return kong.response.exit(500, "no response body")
   end
-  local is_gzip = kong.response.get_header("Content-Encoding") == "gzip"
-  if is_gzip then
+  if kong.response.get_header("Content-Encoding") == "gzip" then
     response_body = kong_utils.inflate_gzip(response_body)
   end
 
@@ -345,7 +355,7 @@ local function body_filter_end(conf)
 
 
   if not llm_state.should_disable_ai_proxy_response_transform() then
-    if is_gzip then
+    if accept_gzip() then
       new_response_string = kong_utils.deflate_gzip(new_response_string)
     end
 
